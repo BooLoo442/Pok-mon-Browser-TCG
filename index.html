@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Browser TCG</title>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    /* General Setup */
+    :root {
+      --primary-color: #ff2d55;
+      --dark-bg: #1e2a3c;
+      --gradient-accent: linear-gradient(90deg, #ff2d55, #ff6b81);
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: radial-gradient(circle, #2c3e50, #1a1a1a);
+      font-family: 'Press Start 2P', cursive;
+      cursor: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="48" viewBox="0 0 24 24"><path fill="%23FFF" stroke="%23000" stroke-width="1.25" d="M5.5 3.21V20.8c0 .45.54.67.85.35l4.86-4.86a.5.5 0 0 1 .35-.15h6.87a.5.5 0 0 0 .35-.85L6.35 2.85a.5.5 0 0 0-.85.35Z"></path></svg>') 0 0, auto;
+      overflow-x: auto;
+    }
+
+    /* Profile Section */
+    .profile {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      padding: 20px;
+      background: linear-gradient(135deg, var(--dark-bg), #2c3e50);
+      border-radius: 12px;
+      border: 2px solid transparent;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6), inset 0 0 10px rgba(255, 45, 85, 0.3);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      z-index: 10;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .profile:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 25px rgba(255, 45, 85, 0.5);
+    }
+
+    .profile .avatar {
+      width: 50px;
+      height: 50px;
+      font-size: 50px;
+      color: var(--primary-color);
+      background: linear-gradient(45deg, #fff, #ff6b81);
+      border-radius: 50%;
+      border: 3px solid var(--primary-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.3s ease;
+    }
+
+    .profile:hover .avatar {
+      transform: rotate(360deg);
+    }
+
+    .profile-info {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .profile-info p {
+      margin: 0;
+      font-size: 10px;
+    }
+
+    .username {
+      color: var(--primary-color);
+      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.4);
+      font-size: 14px;
+    }
+
+    .progress-bar {
+      width: 120px;
+      height: 10px;
+      background: #333;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+
+    .progress {
+      height: 100%;
+      background: var(--gradient-accent);
+      transition: width 0.3s ease;
+    }
+
+    .pokeballs {
+      color: var(--primary-color);
+      font-size: 12px;
+      display: flex;
+      gap: 3px;
+    }
+
+    /* Navigation */
+    .nav-tabs {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 15px;
+      z-index: 10;
+    }
+
+    .nav-button {
+      padding: 10px 20px;
+      font-size: 12px;
+      color: #fff;
+      background: var(--dark-bg);
+      border: 2px solid var(--primary-color);
+      clip-path: polygon(20% 0%, 100% 0%, 80% 100%, 0% 100%);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+      cursor: pointer;
+      transition: transform 0.2s ease, background 0.2s ease;
+      text-transform: uppercase;
+      min-width: 100px;
+      font-family: 'Press Start 2P', cursive;
+    }
+
+    .nav-button:hover, .nav-button.active {
+      background: var(--primary-color);
+      transform: scale(1.05);
+    }
+
+    /* Pack Section */
+    .pack-row {
+      display: flex;
+      justify-content: center;
+      gap: 30px;
+      margin-top: 100px;
+      flex-wrap: wrap;
+    }
+
+    .pack-container {
+      perspective: 1000px;
+      width: 167px;
+      height: 322px;
+      position: relative;
+      cursor: pointer;
+    }
+
+    .pack {
+      width: 100%;
+      height: 100%;
+      background-size: cover;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      transform-style: preserve-3d;
+      animation: idleRotate 6s infinite ease-in-out;
+    }
+
+    .pack-container:hover .pack {
+      box-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
+      animation: none;
+    }
+
+    .pack::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(
+        circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+        rgba(255, 255, 255, 0.6) 0%,
+        transparent 20%
+      );
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      border-radius: 10px;
+      mix-blend-mode: overlay;
+      pointer-events: none;
+    }
+
+    .pack-container:hover .pack::before {
+      opacity: 0.8;
+    }
+
+    .single-pack {
+      margin-top: 200px;
+    }
+
+    /* Animations */
+    @keyframes idleRotate {
+      0%, 100% { transform: rotateX(0deg) rotateY(0deg) translateZ(20px); }
+      25% { transform: rotateX(5deg) rotateY(10deg) translateZ(20px); }
+      50% { transform: rotateX(0deg) rotateY(0deg) translateZ(20px); }
+      75% { transform: rotateX(-5deg) rotateY(-10deg) translateZ(20px); }
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: rotate(0deg) translateZ(20px); }
+      20% { transform: rotate(5deg) translateZ(20px); }
+      40% { transform: rotate(-5deg) translateZ(20px); }
+      60% { transform: rotate(3deg) translateZ(20px); }
+      80% { transform: rotate(-3deg) translateZ(20px); }
+    }
+
+    @keyframes burst {
+      0% { transform: scale(0); opacity: 1; }
+      100% { transform: scale(2); opacity: 0; }
+    }
+
+    @keyframes spin {
+      0% { transform: translate(-50%, -50%) rotate(0deg); }
+      100% { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+
+    /* Open Button */
+    .open-button {
+      margin-top: 30px;
+      width: 60px;
+      height: 60px;
+      background: var(--dark-bg);
+      border: 2px solid var(--primary-color);
+      border-radius: 50%;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+      cursor: pointer;
+      transition: transform 0.2s ease, background 0.2s ease;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .open-button img {
+      width: 32px;
+      height: 32px;
+      z-index: 1;
+    }
+
+    .open-button:hover {
+      background: var(--primary-color);
+      transform: scale(1.1);
+    }
+
+    .open-button.burst::after {
+      content: '';
+      position: absolute;
+      width: 100px;
+      height: 100px;
+      background: radial-gradient(circle, rgba(255, 45, 85, 0.8) 10%, transparent 70%);
+      border-radius: 50%;
+      animation: burst 0.5s ease-out forwards;
+      z-index: 0;
+    }
+
+    /* Card List */
+    .card-list {
+      display: none;
+      margin-top: 20px;
+      padding: 15px;
+      background: rgba(30, 42, 60, 0.8);
+      border: 2px solid var(--primary-color);
+      border-radius: 8px;
+      color: #fff;
+      font-size: 10px;
+      max-width: 300px;
+      text-align: center;
+    }
+
+    .card-list h3 {
+      margin: 0 0 10px;
+      font-size: 12px;
+      color: var(--primary-color);
+    }
+
+    .card-list ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .card-list li {
+      margin: 5px 0;
+    }
+
+    /* Card Deck */
+    .card-deck {
+      display: none;
+      position: relative;
+      width: 200px;
+      height: 280px;
+      margin-top: 150px;
+      margin-left: auto;
+      margin-right: auto;
+      perspective: 1000px;
+      z-index: 5;
+    }
+
+    .card {
+      width: 200px;
+      height: 280px;
+      background-size: cover;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+      position: absolute;
+      top: 0;
+      left: 0;
+      transition: transform 0.3s ease, opacity 0.3s ease;
+      transform-style: preserve-3d;
+      cursor: pointer;
+    }
+
+    .card:not(:first-child) {
+      transform: translateX(calc(var(--card-index) * 10px)) translateZ(calc(var(--card-index) * -3px));
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+    }
+
+    .card:first-child {
+      z-index: 10;
+      transform: translateX(0) translateZ(0);
+    }
+
+    .card:nth-child(2) {
+      z-index: 9;
+    }
+
+    .card.cycling {
+      transform: translateY(100px) translateZ(-20px);
+      opacity: 0;
+      transition: transform 0.5s ease, opacity 0.5s ease;
+    }
+
+    .card-deck:hover .card {
+      transform: translateX(calc(var(--card-index) * 10px)) translateZ(calc(var(--card-index) * -3px)) rotateY(var(--rotate-y, 0deg));
+    }
+
+    .card-deck:hover .card:first-child {
+      transform: translateX(0) translateZ(0) rotateY(var(--rotate-y, 0deg));
+    }
+
+    .card-info {
+      display: none;
+      position: absolute;
+      top: -80px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 150px;
+      padding: 10px;
+      background: rgba(30, 42, 60, 0.8);
+      border: 2px solid #808080;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 8px;
+      text-align: center;
+      z-index: 20;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+
+    .card:first-child:hover .card-info {
+      display: block;
+      opacity: 1;
+    }
+
+    /* Close Button */
+    .close-button {
+      display: none;
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 12px;
+      color: #fff;
+      background: var(--dark-bg);
+      border: 2px solid var(--primary-color);
+      clip-path: polygon(20% 0%, 100% 0%, 80% 100%, 0% 100%);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+      cursor: pointer;
+      transition: transform 0.2s ease, background 0.2s ease, opacity 0.5s ease;
+      text-transform: uppercase;
+      min-width: 100px;
+      opacity: 0;
+    }
+
+    .close-button.visible {
+      display: block;
+      opacity: 1;
+    }
+
+    .close-button:hover {
+      background: var(--primary-color);
+      transform: scale(1.05);
+    }
+
+    /* Update Box */
+    .update-box {
+      margin-top: 60px;
+      margin-bottom: 20px;
+      padding: 20px;
+      background: var(--dark-bg);
+      border: 2px solid var(--primary-color);
+      clip-path: polygon(15% 0%, 100% 0%, 85% 100%, 0% 100%);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      max-width: 600px;
+      width: 90%;
+      color: #fff;
+      font-size: 10px;
+    }
+
+    .update-box img {
+      width: 100px;
+      height: 100px;
+      object-fit: cover;
+    }
+
+    .update-content {
+      flex: 1;
+    }
+
+    /* Loading Circle */
+    .loading-circle {
+      display: none;
+      width: 50px;
+      height: 50px;
+      border: 5px solid var(--primary-color);
+      border-top: 5px solid transparent;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 20;
+    }
+
+    /* Hidden Card Container */
+    .card-container {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="profile" id="profile">
+    <i class="fa-solid fa-circle fa-stack avatar"></i>
+    <div class="profile-info">
+      <p class="username" id="username">Guest</p>
+      <p>XP</p>
+      <div class="progress-bar">
+        <div class="progress" id="xp" style="width: 0%;"></div>
+      </div>
+      <div class="pokeballs" id="pokeballs">⚽⚽⚽⚽⚽</div>
+    </div>
+  </div>
+  <div class="nav-tabs">
+    <button class="nav-button">Home</button>
+    <button class="nav-button active">Packs</button>
+    <button class="nav-button">Center</button>
+    <button class="nav-button">Trade</button>
+  </div>
+  <div class="card-container">
+    <div class="card"></div>
+  </div>
+  <div class="pack-row">
+    <!-- Packs will be added dynamically via JS -->
+  </div>
+  <div class="loading-circle" id="loading-circle"></div>
+  <div class="pack-container single-pack" id="single-pack" style="display: none;">
+    <div class="pack" id="pack"></div>
+  </div>
+  <button class="open-button" id="open-button" onclick="openPack()">
+    <img src="https://cdn-icons-png.flaticon.com/512/1033/1033083.png" alt="Pokéball">
+  </button>
+  <div class="card-list" id="card-list">
+    <h3>Possible Cards</h3>
+    <ul id="card-list-items"></ul>
+  </div>
+  <div class="card-deck" id="card-deck">
+    <!-- Cards will be added dynamically -->
+  </div>
+  <button class="close-button" id="close-button">Close</button>
+  <div class="update-box">
+    <img src="updategif.gif" alt="Update GIF">
+    <div class="update-content">
+      <p>Gain XP</p>
+      <p>Open packs to earn XP and gain more packs!</p>
+      <p>Ps... don't stop!</p>
+    </div>
+  </div>
+  <script>
+    // Utility Functions
+    function setCookie(name, value, days) {
+      const expires = new Date();
+      expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
+      document.cookie = `${name}=${encodeURIComponent(value)};expires=${expires.toUTCString()};path=/`;
+    }
+
+    function getCookie(name) {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      return parts.length === 2 ? decodeURIComponent(parts.pop().split(';').shift()) : null;
+    }
+
+    function getRandomUniqueIndices(max, count) {
+      const indices = Array.from({ length: max }, (_, i) => i);
+      for (let i = max - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [indices[i], indices[j]] = [indices[j], indices[i]];
+      }
+      return indices.slice(0, count);
+    }
+
+    // Initialize User Data
+    const username = 'Guest';
+    let xp = parseInt(getCookie('xp')) || 0;
+    let pokeballs = parseInt(getCookie('pokeballs')) || 0;
+
+    // Update Profile
+    function updateProfile() {
+      document.getElementById('username').textContent = username;
+      document.getElementById('xp').style.width = `${Math.min((xp / 1000) * 100, 100)}%`;
+      document.getElementById('pokeballs').textContent = '⚽'.repeat(Math.min(pokeballs, 5)) + '○'.repeat(Math.max(0, 5 - pokeballs));
+    }
+    updateProfile();
+
+    // Pack Setup
+    const packImages = ['mewtwo.jpg', 'ad.png', 'lunal.png'];
+    const packRow = document.querySelector('.pack-row');
+
+    packImages.forEach((image) => {
+      const container = document.createElement('div');
+      container.classList.add('pack-container');
+      container.onclick = () => selectPack(image);
+
+      const pack = document.createElement('div');
+      pack.classList.add('pack');
+      pack.style.background = `url('${image}') center/cover no-repeat`;
+      container.appendChild(pack);
+      packRow.appendChild(container);
+    });
+
+    // Hover Effects for Packs
+    function addPackHoverEffects(packContainer, pack) {
+      packContainer.addEventListener('mousemove', (e) => {
+        const rect = packContainer.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        const mouseX = e.clientX - centerX;
+        const mouseY = e.clientY - centerY;
+
+        const rotateX = (mouseY / rect.height) * -20;
+        const rotateY = (mouseX / rect.width) * 20;
+        pack.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateZ(20px)`;
+
+        const mousePercentX = (e.clientX - rect.left) / rect.width;
+        const mousePercentY = (e.clientY - rect.top) / rect.height;
+        pack.style.setProperty('--mouse-x', `${mousePercentX * 100}%`);
+        pack.style.setProperty('--mouse-y', `${mousePercentY * 100}%`);
+      });
+
+      packContainer.addEventListener('mouseleave', () => {
+        pack.style.transform = 'rotateX(0deg) rotateY(0deg) translateZ(20px)';
+        pack.style.setProperty('--mouse-x', '50%');
+        pack.style.setProperty('--mouse-y', '50%');
+      });
+    }
+
+    document.querySelectorAll('.pack-container').forEach((container, index) => {
+      addPackHoverEffects(container, container.querySelector('.pack'));
+    });
+
+    addPackHoverEffects(
+      document.getElementById('single-pack'),
+      document.getElementById('pack')
+    );
+
+    // Card Data
+    const cardImages = Array.from({ length: 50 }, (_, i) => `packcontents/A1-${String(i + 1).padStart(3, '0')}.PNG`);
+    const cardData = Array.from({ length: 50 }, (_, i) => ({
+      name: `Card ${i + 1}`,
+      power: 100 + i * 10
+    }));
+
+    // Populate Card List
+    function populateCardList() {
+      const cardList = document.getElementById('card-list-items');
+      cardList.innerHTML = '';
+      cardData.forEach(card => {
+        const li = document.createElement('li');
+        li.textContent = `${card.name} - Power: ${card.power}`;
+        cardList.appendChild(li);
+      });
+    }
+
+    // Pack Selection
+    function selectPack(image) {
+      packRow.style.display = 'none';
+      document.querySelector('.nav-tabs').style.display = 'none';
+      document.querySelector('.update-box').style.display = 'none';
+      document.getElementById('loading-circle').style.display = 'block';
+
+      setTimeout(() => {
+        document.getElementById('loading-circle').style.display = 'none';
+        document.getElementById('pack').style.background = `url('${image}') center/cover no-repeat`;
+        document.getElementById('single-pack').style.display = 'block';
+        document.getElementById('open-button').style.display = 'flex';
+        document.getElementById('card-list').style.display = 'block';
+        populateCardList();
+      }, 2000);
+    }
+
+    // Open Pack
+    function openPack() {
+      const openButton = document.getElementById('open-button');
+      openButton.disabled = true;
+      openButton.classList.add('burst');
+      setTimeout(() => openButton.classList.remove('burst'), 500);
+
+      let shakes = 3;
+      const singlePack = document.getElementById('pack');
+
+      function shake() {
+        if (shakes > 0) {
+          singlePack.style.animation = 'shake 0.3s';
+          setTimeout(() => {
+            singlePack.style.animation = '';
+            shakes--;
+            setTimeout(shake, 500);
+          }, 300);
+        } else {
+          xp += 10;
+          pokeballs = Math.min(pokeballs + 1, 5);
+          setCookie('xp', xp, 30);
+          setCookie('pokeballs', pokeballs, 30);
+          updateProfile();
+          revealCards();
+        }
+      }
+      shake();
+    }
+
+    let cycleCount = 0;
+
+    // Reveal Cards
+    function revealCards() {
+      const deck = document.getElementById('card-deck');
+      deck.innerHTML = '';
+      cycleCount = 0;
+      document.getElementById('close-button').classList.remove('visible');
+      deck.style.display = 'block';
+      document.getElementById('single-pack').style.display = 'none';
+      document.getElementById('open-button').style.display = 'none';
+      document.getElementById('card-list').style.display = 'none';
+
+      const selectedIndices = getRandomUniqueIndices(cardImages.length, 10);
+      const cards = selectedIndices.map((index, i) => {
+        const card = document.createElement('div');
+        card.classList.add('card');
+        card.style.background = `url('${cardImages[index]}') center/cover no-repeat`;
+        card.style.setProperty('--card-index', i);
+        card.dataset.index = index;
+        card.dataset.originalIndex = i;
+
+        const info = document.createElement('div');
+        info.classList.add('card-info');
+        info.innerHTML = `${cardData[index].name}<br>Power: ${cardData[index].power}`;
+        card.appendChild(info);
+
+        return card;
+      });
+
+      cards.forEach(card => deck.appendChild(card));
+
+      deck.addEventListener('click', (e) => {
+        const topCard = deck.querySelector('.card:first-child');
+        if (e.target === topCard || e.target.parentElement === topCard) {
+          cycleCards();
+        }
+      });
+
+      deck.addEventListener('mousemove', (e) => {
+        const rect = deck.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const mouseX = e.clientX - centerX;
+        deck.style.setProperty('--rotate-y', `${(mouseX / rect.width) * 30}deg`);
+      });
+
+      deck.addEventListener('mouseleave', () => {
+        deck.style.setProperty('--rotate-y', '0deg');
+      });
+    }
+
+    // Cycle Cards
+    function cycleCards() {
+      const deck = document.getElementById('card-deck');
+      const cards = deck.querySelectorAll('.card');
+      if (cards.length === 0 || cards.length > 10) return;
+
+      cycleCount++;
+      const topCard = cards[0];
+      topCard.classList.add('cycling');
+
+      setTimeout(() => {
+        topCard.classList.remove('cycling');
+        const index = parseInt(topCard.style.getPropertyValue('--card-index'));
+        topCard.style.setProperty('--card-index', index + 10);
+        deck.appendChild(topCard);
+        deck.querySelectorAll('.card').forEach((card, i) => {
+          card.style.setProperty('--card-index', i);
+          card.style.zIndex = 10 - i;
+        });
+
+        if (cycleCount >= 10 && parseInt(deck.querySelector('.card:first-child').dataset.originalIndex) === 9) {
+          document.getElementById('close-button').classList.add('visible');
+        }
+      }, 500);
+    }
+
+    // Close Deck
+    function closeDeck() {
+      const deck = document.getElementById('card-deck');
+      deck.innerHTML = '';
+      deck.style.display = 'none';
+      document.getElementById('close-button').classList.remove('visible');
+      document.querySelector('.pack-row').style.display = 'flex';
+      document.querySelector('.nav-tabs').style.display = 'flex';
+      document.querySelector('.update-box').style.display = 'flex';
+      document.getElementById('open-button').style.display = 'none';
+      document.getElementById('card-list').style.display = 'none';
+      document.getElementById('open-button').disabled = false;
+      cycleCount = 0;
+    }
+
+    // Navigation
+    document.querySelectorAll('.nav-button').forEach(button => {
+      button.addEventListener('click', () => {
+        document.querySelectorAll('.nav-button').forEach(btn => btn.classList.remove('active'));
+        button.classList.add('active');
+        document.getElementById('open-button').style.display = 'none';
+      });
+    });
+
+    document.getElementById('close-button').addEventListener('click', closeDeck);
+  </script>
+</body>
+</html>
